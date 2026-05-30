@@ -1,0 +1,53 @@
+name: FAST-VQA-B-Refactor-1*4
+num_epochs: 30
+l_num_epochs: 0
+warmup_epochs: 2.5
+ema: true
+save_model: true
+batch_size: 16
+num_workers: 6
+
+wandb:
+    project_name: VQA_Experiments_2024
+
+data:
+    test-data:
+        type: FusionDataset
+        args:
+            phase: test
+            anno_file: ./sample/video_name.txt
+            data_prefix:  ./sample/video/
+            sample_types:
+                #resize:
+                #    size_h: 224
+                #    size_w: 224
+                fragments:
+                    fragments_h: 7
+                    fragments_w: 7
+                    fsize_h: 32
+                    fsize_w: 32
+                    aligned: 32
+                    clip_len: 32
+                    frame_interval: 2
+                    num_clips: 4
+model:
+    type: DiViDeAddEvaluator
+    args:
+        backbone:
+            fragments:
+                checkpoint: false
+                pretrained: 
+        backbone_size: swin_tiny_grpb
+        backbone_preserve_keys: fragments
+        divide_head: false
+        vqa_head:
+            in_channels: 768
+            hidden_channels: 64
+            
+optimizer:
+    lr: !!float 1e-3
+    backbone_lr_mult: !!float 1e-1
+    wd: 0.05
+        
+load_path: ../../../../../../../../huggingface/Koala-36M/Training_Suitability_Assessment/infer.pth
+test_load_path: ../../../../../../../../huggingface/Koala-36M/Training_Suitability_Assessment/infer.pth

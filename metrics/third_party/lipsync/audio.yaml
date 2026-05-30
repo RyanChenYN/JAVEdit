@@ -1,0 +1,23 @@
+audio:
+  num_mels: 80 # Number of mel-spectrogram channels and local conditioning dimensionality
+  rescale: true # Whether to rescale audio prior to preprocessing
+  rescaling_max: 0.9 # Rescaling value
+  use_lws:
+    false # Use LWS (https://github.com/Jonathan-LeRoux/lws) for STFT and phase reconstruction
+    # It"s preferred to set True to use with https://github.com/r9y9/wavenet_vocoder
+    # Does not work if n_ffit is not multiple of hop_size!!
+  n_fft: 800 # Extra window size is filled with 0 paddings to match this parameter
+  hop_size: 200 # For 16000Hz, 200 = 12.5 ms (0.0125 * sample_rate)
+  win_size: 800 # For 16000Hz, 800 = 50 ms (If None, win_size = n_fft) (0.05 * sample_rate)
+  sample_rate: 16000 # 16000Hz (corresponding to librispeech) (sox --i <filename>)
+  frame_shift_ms: null
+  signal_normalization: true
+  allow_clipping_in_normalization: true
+  symmetric_mels: true
+  max_abs_value: 4.0
+  preemphasize: true # whether to apply filter
+  preemphasis: 0.97 # filter coefficient.
+  min_level_db: -100
+  ref_level_db: 20
+  fmin: 55
+  fmax: 7600

@@ -1,0 +1,22 @@
+model:
+  audio_encoder:
+    in_channels: 1
+    block_out_channels: [32, 64, 128, 256, 512, 1024, 2048]
+    downsample_factors: [[2, 1], 2, 2, 1, 2, 2, [2, 3]]
+    attn_blocks: [0, 0, 0, 0, 0, 0, 0]
+    dropout: 0.0
+  visual_encoder:
+    in_channels: 48
+    block_out_channels: [64, 128, 256, 256, 512, 1024, 2048, 2048]
+    downsample_factors: [[1, 2], 2, 2, 2, 2, 2, 2, 2]
+    attn_blocks: [0, 0, 0, 0, 0, 0, 0, 0]
+    dropout: 0.0
+
+ckpt:
+  inference_ckpt_path: ../../../../../../../../ByteDance/LatentSync/latentsync_syncnet.pt
+
+data:
+  num_frames: 16
+  resolution: 256
+  audio_sample_rate: 16000
+  video_fps: 25
