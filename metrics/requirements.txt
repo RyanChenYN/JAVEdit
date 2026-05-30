@@ -57,3 +57,6 @@ einops==0.8.2
 sk-video==1.1.10
 diffusers==0.38.0
 omegaconf==2.3.0
+# Face detection + 106-point landmarks for SyncNet (insightface buffalo_l)
+insightface==0.7.3
+onnxruntime-gpu==1.21.0

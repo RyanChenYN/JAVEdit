@@ -7,22 +7,22 @@
 <p align="center">
     <a href="https://scholar.google.com.hk/citations?user=-WKfgd0AAAAJ&hl=zh-CN"><strong>Yinan Chen <sup>1★</sup></strong></a>
     ·
-    <a href=""><strong>Chuming Lin <sup>2★</sup></strong></a>
+    <a href="https://scholar.google.com/citations?user=6pS2epEAAAAJ&hl=en"><strong>Chuming Lin <sup>2★</sup></strong></a>
     ·
-    <a href=""><strong>Zhennan Chen <sup>3</sup></strong></a>
+    <a href="https://scholar.google.com/citations?user=edoqkgoAAAAJ&hl=en"><strong>Zhennan Chen <sup>3</sup></strong></a>
     ·
     <a href=""><strong>Yuxiang Zeng <sup>4</sup></strong></a>
     ·
-    <a href=""><strong>Junwei Zhu <sup>2</sup></strong></a>
+    <a href="https://scholar.google.com/citations?user=-OxQlHsAAAAJ&hl=zh-CN"><strong>Junwei Zhu <sup>2</sup></strong></a>
     ·
     <br>
-    <a href=""><strong>Yali Bi <sup>1</sup></strong></a>
+    <a href="https://scholar.google.com/citations?user=8V6O60gAAAAJ&hl=zh-CN"><strong>Yali Bi <sup>1</sup></strong></a>
     ·
     <a href=""><strong>Xijie Huang <sup>5</sup></strong></a>
     ·
-    <a href=""><strong>Chengming Xu <sup>2</sup></strong></a>
+    <a href="https://scholar.google.com/citations?user=pjcYzvYAAAAJ&hl=en"><strong>Chengming Xu <sup>2</sup></strong></a>
     ·
-    <a href=""><strong>Donghao Luo <sup>2</sup></strong></a>
+    <a href="https://scholar.google.com/citations?user=2yj541QAAAAJ&hl=en"><strong>Donghao Luo <sup>2</sup></strong></a>
     ·
     <a href="https://scholar.google.com/citations?hl=zh-CN&user=m3KDreEAAAAJ"><strong>Zhucun Xue <sup>1</sup></strong></a>
     ·
@@ -69,6 +69,8 @@
 # :blush: Continuous Updates
 
 This repository is the official implementation of **JAVEdit: Joint Audio-Visual Instruction-Guided Video Editing with Agentic Data Curation**. It collects the dataset, model, and benchmark resources for instruction-guided **joint audio-visual** video editing. If you find any work missing or have any suggestions, feel free to open a pull request or [contact us](#contact).
+
+
 
 <a name="highlight"></a>
 
@@ -158,7 +160,7 @@ All checkpoint locations are configured in `metrics/path.yml`. Download the foll
 - [Qwen/Qwen3-Omni-30B-A3B-Thinking](https://huggingface.co/Qwen/Qwen3-Omni-30B-A3B-Thinking) — instruction compliance / video fidelity / AV-quality judge
 - [Koala-36M/Training_Suitability_Assessment](https://huggingface.co/Koala-36M/Training_Suitability_Assessment) — VTSS visual quality
 - [sarulab-speech/UTMOSv2](https://huggingface.co/sarulab-speech/UTMOSv2) — UTMOSv2 audio quality (`fold0_s42_best_model.pth`)
-- SyncNet / LatentSync face-detection and lip-sync weights (`yoloface_v5l.pt`, `p1.pt`, `p2.pt`, `res101_maxpool_pts217.bin`)
+- [ByteDance/LatentSync](https://huggingface.co/ByteDance/LatentSync) — SyncNet lip-sync weight (`latentsync_syncnet.pt`). Face detection and 106-point landmarks use the insightface `buffalo_l` pack (`det_10g.onnx` + `2d106det.onnx`), downloaded automatically by `insightface` on first run into `<model_root>/models/buffalo_l/`.
 
 After downloading, edit `metrics/path.yml` to point each entry to your local checkpoint directory. All paths are resolved relative to the location of `path.yml`.
 
@@ -277,4 +279,4 @@ yinan.chen@zju.edu.cn
 
 # :pray: Acknowledgements
 
-JAVEdit is built upon and vendors components from many excellent open-source projects, including LTX-Video, Qwen3-Omni, Qwen3, Koala-36M, UTMOSv2, LatentSync, SAM-Audio, HunyuanImage-3.0, Wan2.2-Animate, HunyuanVideo-Foley, MiniMax-Remover, and SAM3. We sincerely thank the authors for their contributions to the community.
+JAVEdit is built upon and vendors components from many excellent open-source projects, including LTX-Video, Qwen3-Omni, Qwen3, Koala-36M, UTMOSv2, LatentSync, SAM-Audio, HunyuanImage-3.0, Wan2.2-Animate, OpenVE-3M, HunyuanVideo-Foley, MiniMax-Remover, and SAM3. We sincerely thank the authors for their contributions to the community.

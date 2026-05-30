@@ -1,12 +1,13 @@
 # coding=utf-8
 """
-utmos.py - UTMOSv2 音频质量指标
-基于 UTMOSv2 模型对视频中的音频进行 MOS (Mean Opinion Score) 评分。
+utmos.py - UTMOSv2 audio quality metric.
 
-用法 (单独使用):
-    python utmos.py --video_dir <视频目录>
+Uses the UTMOSv2 model to predict a MOS (Mean Opinion Score) for video audio.
 
-作为模块调用:
+Standalone usage:
+    python utmos.py --video_dir <video_dir>
+
+As a module:
     from utmos import compute_utmos
     results = compute_utmos(video_dir, bench_csv, device='cuda:0', path_cfg=cfg)
 """
@@ -38,7 +39,7 @@ def _setup_paths(path_cfg):
 
 
 def _extract_audio(video_path, output_wav_path):
-    """用 ffmpeg 从视频中提取音频为 16kHz mono wav"""
+    """Extract audio from a video as 16kHz mono wav using ffmpeg."""
     cmd = [
         'ffmpeg', '-y', '-i', video_path,
         '-vn', '-acodec', 'pcm_s16le', '-ar', '16000', '-ac', '1',
@@ -51,15 +52,15 @@ def _extract_audio(video_path, output_wav_path):
 def compute_utmos(video_dir, bench_csv, device='cuda:0', num_gpus=1, path_cfg=None,
                   fold=0, **kwargs):
     """
-    计算 UTMOSv2 音频质量指标。
+    Compute the UTMOSv2 audio quality metric.
 
     Args:
-        video_dir: 编辑后视频目录 (包含 mp4 文件)
-        bench_csv: benchmark CSV 路径
-        device: 设备
-        num_gpus: GPU 数量 (UTMOSv2 使用单GPU即可)
-        path_cfg: utmos 路径配置 dict (从 path.yml 加载)
-        fold: 模型 fold (0-4)
+        video_dir: directory of edited videos (mp4 files)
+        bench_csv: benchmark CSV path
+        device: device
+        num_gpus: number of GPUs (UTMOSv2 runs on a single GPU)
+        path_cfg: utmos path config dict (loaded from path.yml)
+        fold: model fold (0-4)
 
     Returns:
         tuple: (overall_stats, per_task_stats, results_list)
@@ -78,7 +79,7 @@ def compute_utmos(video_dir, bench_csv, device='cuda:0', num_gpus=1, path_cfg=No
     total = len(videos)
     logger.info(f'UTMOSv2 evaluation: {total} videos')
 
-    # 提取音频到临时目录
+    # Extract audio into a temporary directory
     tmp_dir = tempfile.mkdtemp(prefix='utmos_')
     wav_paths = []
     video_names = []
@@ -99,11 +100,11 @@ def compute_utmos(video_dir, bench_csv, device='cuda:0', num_gpus=1, path_cfg=No
         shutil.rmtree(tmp_dir, ignore_errors=True)
         return {'mean': None, 'valid_count': 0, 'null_count': total}, {}, []
 
-    # 加载 UTMOSv2 模型
+    # Load the UTMOSv2 model
     config_name = path_cfg.get('config_name', 'fusion_stage3')
     cfg_module = importlib.import_module(f'third_party.utmosv2.config.{config_name}')
 
-    # 模拟 args 对象
+    # Stub args object
     class FakeArgs:
         pass
 
@@ -131,7 +132,7 @@ def compute_utmos(video_dir, bench_csv, device='cuda:0', num_gpus=1, path_cfg=No
     model = get_model(cfg_module, torch_device)
     cfg_module.print_config = False
 
-    # 构建数据集和 dataloader
+    # Build dataset and dataloader
     import pandas as pd
     data = pd.DataFrame({
         'file_path': wav_paths,
@@ -145,10 +146,10 @@ def compute_utmos(video_dir, bench_csv, device='cuda:0', num_gpus=1, path_cfg=No
     test_dataloader = get_dataloader(cfg_module, test_dataset, 'test')
     test_preds, _ = run_inference(cfg_module, model, test_dataloader, 0, data, torch_device)
 
-    # 清理临时文件
+    # Clean up temporary files
     shutil.rmtree(tmp_dir, ignore_errors=True)
 
-    # 整理结果
+    # Collect results
     results = []
     for i, video_name in enumerate(video_names):
         score = float(test_preds[i])
@@ -157,11 +158,11 @@ def compute_utmos(video_dir, bench_csv, device='cuda:0', num_gpus=1, path_cfg=No
             'utmos_score': round(score, 4),
         })
 
-    # 添加 task 信息
+    # Attach task labels
     task_map = build_task_map(bench_csv)
     assign_tasks(results, task_map)
 
-    # 统计
+    # Statistics
     overall_stats = compute_statistics(results, 'utmos_score',
                                        valid_fn=lambda x: x is not None)
     per_task_stats = compute_per_task_statistics(results, 'utmos_score',
@@ -174,11 +175,11 @@ def compute_utmos(video_dir, bench_csv, device='cuda:0', num_gpus=1, path_cfg=No
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='UTMOSv2 音频质量评测')
-    parser.add_argument('--video_dir', required=True, help='编辑后视频目录')
-    parser.add_argument('--bench_csv', default=None, help='Benchmark CSV 路径')
+    parser = argparse.ArgumentParser(description='UTMOSv2 audio quality evaluation')
+    parser.add_argument('--video_dir', required=True, help='Directory of edited videos')
+    parser.add_argument('--bench_csv', default=None, help='Benchmark CSV path')
     parser.add_argument('--fold', type=int, default=0, help='Model fold (0-4)')
-    parser.add_argument('--output', type=str, default=None, help='输出 JSON 路径')
+    parser.add_argument('--output', type=str, default=None, help='Output JSON path')
     return parser.parse_args()
 
 

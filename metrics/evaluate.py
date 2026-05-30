@@ -1,17 +1,16 @@
 # coding=utf-8
 """
-evaluate.py - JAVEdit Metrics 总评测入口
-统一调用 syncnet, vtss, utmos 指标进行评测。
+evaluate.py - JAVEdit metrics evaluation entry point.
 
-用法:
-    # 运行所有指标
-    python evaluate.py --video_dir <视频目录> --num_gpus 8
+Examples:
+    # Run all metrics
+    python evaluate.py --video_dir <video_dir> --num_gpus 8
 
-    # 只运行指定指标
-    python evaluate.py --video_dir <视频目录> --metric syncnet vtss
+    # Run selected metrics only
+    python evaluate.py --video_dir <video_dir> --metric syncnet vtss
 
-    # 指定输出目录和 benchmark CSV
-    python evaluate.py --video_dir <视频目录> --bench_csv <csv路径> --output_path <输出目录>
+    # Specify output directory and benchmark CSV
+    python evaluate.py --video_dir <video_dir> --bench_csv <csv> --output_path <out_dir>
 """
 import torch
 import os
@@ -37,7 +36,7 @@ def parse_args():
         "--bench_csv",
         type=str,
         default=None,
-        help="Path to benchmark_150_v2.csv (default: read from path.yml)",
+        help="Path to benchmark_150.csv (default: read from path.yml)",
     )
 
     parser.add_argument(
@@ -81,13 +80,11 @@ def main():
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # 输出目录
     if args.output_path is None:
         output_path = os.path.join(args.video_dir, 'eval_results')
     else:
         output_path = args.output_path
 
-    # 创建评测实例
     bench = JAVBench(
         device=device,
         output_path=output_path,
@@ -101,7 +98,6 @@ def main():
     print(f'Num GPUs: {args.num_gpus}')
     print()
 
-    # 执行评测
     all_results = bench.evaluate(
         video_dir=args.video_dir,
         bench_csv=args.bench_csv,
@@ -109,7 +105,6 @@ def main():
         metric_list=args.metric,
     )
 
-    # 打印摘要
     bench.print_summary(all_results)
 
     print('\nEvaluation completed successfully!')

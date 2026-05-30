@@ -1,10 +1,11 @@
 # coding=utf-8
 """
-qwen_judge.py - Qwen3-Omni VLM Judge 共享模块
-封装 Qwen3-Omni 模型加载、prompt 模板和推理逻辑，
-供 av_quality.py / instruction_compliance.py / video_fidelity.py 调用。
+qwen_judge.py - Shared Qwen3-Omni VLM judge module.
 
-运行环境: conda activate qwen3omni
+Wraps Qwen3-Omni model loading, prompt templates and inference logic,
+used by av_quality.py / instruction_compliance.py / video_fidelity.py.
+
+Environment: conda activate qwen3omni
 """
 import os
 import sys
@@ -17,7 +18,7 @@ from tqdm import tqdm
 logger = logging.getLogger(__name__)
 
 # ============================================================
-# 清理 sys.path 中可能干扰 vllm 的路径
+# Remove sys.path entries that may shadow the vllm package
 # ============================================================
 _cleaned = []
 for _p in sys.path:
@@ -206,7 +207,7 @@ _global_processor = None
 
 
 def load_model(model_path, tensor_parallel_size=4, pipeline_parallel_size=2):
-    """加载 Qwen3-Omni 模型 (全局单例)"""
+    """Load the Qwen3-Omni model (global singleton)."""
     global _global_llm, _global_processor
 
     if _global_llm is not None:
@@ -243,13 +244,13 @@ def load_model(model_path, tensor_parallel_size=4, pipeline_parallel_size=2):
 
 def run_instruction_eval(entries, llm, processor, batch_size=8):
     """
-    运行 instruction compliance + video fidelity 评测。
+    Run instruction compliance + video fidelity evaluation.
 
     Args:
-        entries: list of dict, 每项需包含 src_path, tgt_path, prompt, task, video_name
+        entries: list of dict, each with src_path, tgt_path, prompt, task, video_name
         llm: vLLM model instance
         processor: Qwen3OmniMoeProcessor
-        batch_size: 批大小
+        batch_size: batch size
 
     Returns:
         list of dict with instruction_compliance, video_fidelity, raw_output
@@ -329,13 +330,13 @@ def run_instruction_eval(entries, llm, processor, batch_size=8):
 
 def run_av_quality_eval(entries, llm, processor, batch_size=8):
     """
-    运行 AV quality 评测。
+    Run AV quality evaluation.
 
     Args:
-        entries: list of dict, 每项需包含 tgt_path, task, video_name
+        entries: list of dict, each with tgt_path, task, video_name
         llm: vLLM model instance
         processor: Qwen3OmniMoeProcessor
-        batch_size: 批大小
+        batch_size: batch size
 
     Returns:
         list of dict with av_quality, raw_output

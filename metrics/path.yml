@@ -1,30 +1,28 @@
-# JAVEdit Metrics 路径配置
-# 模型权重路径统一在此管理，代码已放在 third_party/ 下
+# JAVEdit Metrics path config
 
-# SyncNet 相关
+# SyncNet (LatentSync). Face detection + 106-point landmarks use the
+# insightface buffalo_l pack (det_10g + 2d106det); models are auto-downloaded
+# by insightface under <model_root>/models/buffalo_l/.
 syncnet:
   config_path: third_party/lipsync/configs.yaml
-  det_path: ../../../VideoTranslate/data/models/yoloface_v5l.pt
-  p1_path: ../../../VideoTranslate/data/models/p1.pt
-  p2_path: ../../../VideoTranslate/data/models/p2.pt
-  pts217_path: ../../../VideoTranslate/data/models/res101_maxpool_pts217.bin
+  model_root: ../../../models/insightface
 
-# VTSS 相关
+# VTSS
 vtss:
-  checkpoint: ../../../../../../huggingface/Koala-36M/Training_Suitability_Assessment/infer.pth
+  checkpoint: ../../../../../../Koala-36M/Training_Suitability_Assessment/infer.pth
   config: third_party/vtss/test.yml
 
-# UTMOSv2 相关
+# UTMOSv2
 utmos:
   config_name: fusion_stage3
 
-# Qwen3-Omni VLM Judge (av_quality / instruction_compliance / video_fidelity 共用)
+# Qwen3-Omni VLM Judge (av_quality / instruction_compliance / video_fidelity)
 qwen_judge:
-  model_path: ../../../../../../huggingface/Qwen/Qwen3-Omni-30B-A3B-Thinking
+  model_path: ../../../../../../Qwen/Qwen3-Omni-30B-A3B-Thinking
   tensor_parallel_size: 4
   pipeline_parallel_size: 2
   batch_size: 8
 
 # Benchmark CSV
 benchmark:
-  csv_path: ../../../JAVEdit/data/benchmark/benchmark_150_v2.csv
+  csv_path: ../../../benchmark_150.csv

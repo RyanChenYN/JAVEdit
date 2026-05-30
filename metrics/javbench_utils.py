@@ -1,6 +1,6 @@
 # coding=utf-8
 """
-javbench_utils.py - JAVEdit Metrics 工具函数
+javbench_utils.py - Utility functions for JAVEdit metrics.
 """
 import os
 import csv
@@ -13,7 +13,7 @@ METRICS_DIR = Path(__file__).resolve().parent
 
 
 def load_yaml(path):
-    """加载 YAML 配置文件"""
+    """Load a YAML config file."""
     with open(path, 'r', encoding='utf-8') as f:
         return yaml.safe_load(f)
 
@@ -33,8 +33,7 @@ def resolve_config_paths(cfg, base_dir=None):
     """Resolve known path fields in a nested config dict."""
     path_keys = {
         'path', 'config', 'checkpoint', 'csv_path', 'model_path',
-        'config_path', 'det_path', 'p1_path', 'p2_path', 'pts217_path',
-        'inference_ckpt_path',
+        'config_path', 'model_root', 'inference_ckpt_path',
     }
     if isinstance(cfg, dict):
         resolved = {}
@@ -58,13 +57,13 @@ def load_path_config(path=None):
 
 
 def load_json(path):
-    """加载 JSON 文件"""
+    """Load a JSON file."""
     with open(path, 'r', encoding='utf-8') as f:
         return json.load(f)
 
 
 def save_json(data, path):
-    """保存 JSON 文件，处理 numpy 类型"""
+    """Save a JSON file, converting numpy types."""
     converted_data = convert_types(data)
     os.makedirs(os.path.dirname(path) or '.', exist_ok=True)
     with open(path, 'w', encoding='utf-8') as f:
@@ -72,7 +71,7 @@ def save_json(data, path):
 
 
 def convert_types(obj):
-    """递归转换 numpy 类型为 Python 原生类型"""
+    """Recursively convert numpy types to native Python types."""
     if isinstance(obj, np.integer):
         return int(obj)
     elif isinstance(obj, np.floating):
@@ -91,8 +90,8 @@ def convert_types(obj):
 
 def get_hash_from_filename(filename):
     """
-    从文件名中提取 32 位 hash 值。
-    支持多种命名格式:
+    Extract the 32-char hash from a filename.
+    Supports multiple naming formats:
       - LTX: 0a16d2122d7b9e9fe6c2a6aa65b658e6_0_edited_121_with_audio.mp4
       - AVI-Edit: 0a16d2122d7b9e9fe6c2a6aa65b658e6_0.mp4
       - Kiwi-Edit: 0a16d2122d7b9e9fe6c2a6aa65b658e6.mp4
@@ -106,11 +105,11 @@ def get_hash_from_filename(filename):
 
 def build_task_map(bench_csv):
     """
-    从 benchmark CSV 构建 hash -> task 的映射。
-    
+    Build a hash -> task map from the benchmark CSV.
+
     Args:
-        bench_csv: benchmark_150_v2.csv 的路径
-    
+        bench_csv: path to benchmark_150.csv
+
     Returns:
         dict: {hash: task_name}
     """
@@ -129,13 +128,13 @@ def build_task_map(bench_csv):
 
 def collect_videos(video_dir):
     """
-    收集目录下所有 mp4 视频文件路径。
-    
+    Collect all mp4 video paths under a directory.
+
     Args:
-        video_dir: 视频目录
-    
+        video_dir: video directory
+
     Returns:
-        list: 排序后的视频完整路径列表
+        list: sorted list of full video paths
     """
     videos = sorted([
         os.path.join(video_dir, f)
@@ -147,14 +146,14 @@ def collect_videos(video_dir):
 
 def assign_tasks(results, task_map):
     """
-    给每条结果记录添加 task 字段。
-    
+    Add a 'task' field to each result record.
+
     Args:
-        results: list of dict, 每条记录需有 'video' 字段(文件名)
-        task_map: hash -> task 映射
-    
+        results: list of dict, each with a 'video' field (filename)
+        task_map: hash -> task map
+
     Returns:
-        results (in-place 修改)
+        results (modified in place)
     """
     for r in results:
         video_name = os.path.splitext(r['video'])[0]
@@ -165,15 +164,15 @@ def assign_tasks(results, task_map):
 
 def compute_statistics(results, score_key, valid_fn=None):
     """
-    计算指标统计信息。
-    
+    Compute aggregate statistics for a metric.
+
     Args:
         results: list of dict
-        score_key: 分数字段名
-        valid_fn: 判断分数是否有效的函数, 默认 lambda x: x is not None and x >= 0
-    
+        score_key: name of the score field
+        valid_fn: function deciding if a score is valid, default lambda x: x is not None and x >= 0
+
     Returns:
-        dict: 包含 mean, median, min, max, valid_count, null_count
+        dict: mean, median, min, max, valid_count, null_count
     """
     if valid_fn is None:
         valid_fn = lambda x: x is not None and x >= 0
@@ -205,13 +204,13 @@ def compute_statistics(results, score_key, valid_fn=None):
 
 def compute_per_task_statistics(results, score_key, valid_fn=None):
     """
-    按任务分类计算统计信息。
-    
+    Compute per-task statistics.
+
     Args:
-        results: list of dict, 每条需有 'task' 字段
-        score_key: 分数字段名
-        valid_fn: 同 compute_statistics
-    
+        results: list of dict, each with a 'task' field
+        score_key: name of the score field
+        valid_fn: same as compute_statistics
+
     Returns:
         dict: {task_name: statistics_dict}
     """

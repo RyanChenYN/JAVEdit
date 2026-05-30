@@ -1,12 +1,13 @@
 # coding=utf-8
 """
-vtss.py - VTSS 视频质量指标 (Video Training Suitability Score)
-基于 Koala-36M DiViDeAddEvaluator 计算视频训练适用性分数。
+vtss.py - VTSS (Video Training Suitability Score) visual quality metric.
 
-用法 (单独使用):
-    python vtss.py --video_dir <视频目录> --num_gpus 8
+Uses Koala-36M's DiViDeAddEvaluator to score video training suitability.
 
-作为模块调用:
+Standalone usage:
+    python vtss.py --video_dir <video_dir> --num_gpus 8
+
+As a module:
     from vtss import compute_vtss
     results = compute_vtss(video_dir, bench_csv, device='cuda:0', num_gpus=8, path_cfg=cfg)
 """
@@ -40,7 +41,7 @@ def _setup_paths(path_cfg):
 
 
 def _load_vtss_model(vtss_opt, device, checkpoint_path=None):
-    """加载 VTSS 模型"""
+    """Load the VTSS model."""
     from third_party.vtss.model import DiViDeAddEvaluator
 
     model = DiViDeAddEvaluator(**vtss_opt["model"]["args"]).to(device)
@@ -68,7 +69,7 @@ def _load_vtss_model(vtss_opt, device, checkpoint_path=None):
 
 
 def _compute_single_video(video_path, vtss_model, data_opt_template, device):
-    """计算单个视频的 VTSS 分数"""
+    """Compute the VTSS score for a single video."""
     from third_party.vtss.datasets import FusionDataset
 
     try:
@@ -110,7 +111,7 @@ def _compute_single_video(video_path, vtss_model, data_opt_template, device):
 
 def _worker_fn(gpu_id, video_shard, path_cfg, vtss_opt, data_opt_template,
                output_dir, progress_counter):
-    """单 GPU Worker 进程"""
+    """Single-GPU worker process."""
     device = 'cuda:%d' % gpu_id
     _setup_paths(path_cfg)
 
@@ -134,14 +135,14 @@ def _worker_fn(gpu_id, video_shard, path_cfg, vtss_opt, data_opt_template,
 
 def compute_vtss(video_dir, bench_csv, device='cuda:0', num_gpus=8, path_cfg=None, **kwargs):
     """
-    计算 VTSS 视频质量指标。
+    Compute the VTSS visual quality metric.
 
     Args:
-        video_dir: 编辑后视频目录 (包含 mp4 文件)
-        bench_csv: benchmark CSV 路径
-        device: 设备
-        num_gpus: 使用的 GPU 数量
-        path_cfg: vtss 路径配置 dict (从 path.yml 加载)
+        video_dir: directory of edited videos (mp4 files)
+        bench_csv: benchmark CSV path
+        device: device
+        num_gpus: number of GPUs to use
+        path_cfg: vtss path config dict (loaded from path.yml)
 
     Returns:
         tuple: (overall_stats, per_task_stats, results_list)
@@ -154,12 +155,12 @@ def compute_vtss(video_dir, bench_csv, device='cuda:0', num_gpus=8, path_cfg=Non
 
     _setup_paths(path_cfg)
 
-    # 加载 VTSS 配置
+    # Load VTSS config
     vtss_config_path = path_cfg['config']
     with open(vtss_config_path) as f:
         vtss_opt = yaml.safe_load(f)
 
-    # 找到测试数据配置
+    # Locate the test data config
     data_key = None
     for key in vtss_opt['data'].keys():
         if 'val' in key or 'test' in key:
@@ -171,11 +172,11 @@ def compute_vtss(video_dir, bench_csv, device='cuda:0', num_gpus=8, path_cfg=Non
     total = len(videos)
     logger.info(f'VTSS evaluation: {total} videos, {num_gpus} GPUs')
 
-    # 临时输出目录
+    # Temporary output directory
     output_dir = os.path.join(video_dir, '.vtss_tmp')
     os.makedirs(output_dir, exist_ok=True)
 
-    # 分配 GPU
+    # Shard videos across GPUs
     shards = [[] for _ in range(num_gpus)]
     for i, v in enumerate(videos):
         shards[i % num_gpus].append(v)
@@ -193,7 +194,6 @@ def compute_vtss(video_dir, bench_csv, device='cuda:0', num_gpus=8, path_cfg=Non
         p.start()
         processes.append(p)
 
-    # 进度条
     pbar = tqdm(total=total, desc='VTSS', unit='video', dynamic_ncols=True)
     last_val = 0
     while any(p.is_alive() for p in processes):
@@ -209,7 +209,7 @@ def compute_vtss(video_dir, bench_csv, device='cuda:0', num_gpus=8, path_cfg=Non
     for p in processes:
         p.join()
 
-    # 汇总结果
+    # Merge results
     results = []
     for gpu_id in range(num_gpus):
         gpu_output = os.path.join(output_dir, 'vtss_gpu%d.jsonl' % gpu_id)
@@ -223,17 +223,17 @@ def compute_vtss(video_dir, bench_csv, device='cuda:0', num_gpus=8, path_cfg=Non
                             pass
             os.remove(gpu_output)
 
-    # 清理临时目录
+    # Clean up the temporary directory
     try:
         os.rmdir(output_dir)
     except:
         pass
 
-    # 添加 task 信息
+    # Attach task labels
     task_map = build_task_map(bench_csv)
     assign_tasks(results, task_map)
 
-    # 统计 (vtss_score >= 0 为有效)
+    # Statistics (vtss_score >= 0 counts as valid)
     overall_stats = compute_statistics(results, 'vtss_score',
                                        valid_fn=lambda x: x is not None and x >= 0)
     per_task_stats = compute_per_task_statistics(results, 'vtss_score',
@@ -246,11 +246,11 @@ def compute_vtss(video_dir, bench_csv, device='cuda:0', num_gpus=8, path_cfg=Non
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='VTSS 视频质量评测')
-    parser.add_argument('--video_dir', required=True, help='编辑后视频目录')
-    parser.add_argument('--bench_csv', default=None, help='Benchmark CSV 路径')
+    parser = argparse.ArgumentParser(description='VTSS visual quality evaluation')
+    parser.add_argument('--video_dir', required=True, help='Directory of edited videos')
+    parser.add_argument('--bench_csv', default=None, help='Benchmark CSV path')
     parser.add_argument('--num_gpus', type=int, default=8)
-    parser.add_argument('--output', type=str, default=None, help='输出 JSON 路径')
+    parser.add_argument('--output', type=str, default=None, help='Output JSON path')
     return parser.parse_args()
 
 

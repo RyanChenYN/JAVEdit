@@ -1,12 +1,13 @@
 # coding=utf-8
 """
-syncnet.py - SyncNet 音画同步指标
-基于 LatentSync 的 SyncNet 计算音画同步置信度 (conf) 和偏移量 (av_offset)。
+syncnet.py - SyncNet audio-visual synchronization metric.
 
-用法 (单独使用):
-    python syncnet.py --video_dir <视频目录> --num_gpus 8
+Uses LatentSync's SyncNet to compute AV sync confidence (conf) and offset (av_offset).
 
-作为模块调用:
+Standalone usage:
+    python syncnet.py --video_dir <video_dir> --num_gpus 8
+
+As a module:
     from syncnet import compute_syncnet
     results = compute_syncnet(video_dir, bench_csv, device='cuda:0', num_gpus=8, path_cfg=cfg)
 """
@@ -33,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 def _compute_single_video(video_path, align_instance, restorer, lipsync,
                           resize_tf, normalize_tf, device):
-    """计算单个视频的 SyncNet 分数"""
+    """Compute the SyncNet score for a single video."""
     import subprocess as _sp
     from decord import VideoReader, AudioReader
     from third_party.lipsync.tensor_utils import calc_pdist_cos
@@ -41,7 +42,7 @@ def _compute_single_video(video_path, align_instance, restorer, lipsync,
 
     tmp_video = None
     try:
-        # 预处理: 低帧率转25fps，低分辨率放大到720p
+        # Preprocess: bump low frame rate to 25fps and upscale low resolution to 720p
         _vr_check = VideoReader(video_path)
         _fps_check = _vr_check.get_avg_fps()
         _h_check = _vr_check[0].shape[0]
@@ -58,7 +59,7 @@ def _compute_single_video(video_path, align_instance, restorer, lipsync,
             _sp.run(cmd, stdout=_sp.DEVNULL, stderr=_sp.DEVNULL)
             video_path = tmp_video
 
-        # 音频
+        # Audio
         ar = AudioReader(video_path, sample_rate=lipsync.audio_sample_rate)
         audio_raw = ar[:]
         audio_data = (audio_raw.numpy().squeeze(0) if hasattr(audio_raw, 'numpy')
@@ -79,13 +80,14 @@ def _compute_single_video(video_path, align_instance, restorer, lipsync,
             frame_raw = vr[idx]
             frame = (frame_raw.numpy() if hasattr(frame_raw, 'numpy') else frame_raw.asnumpy())
             frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-            pts256_list, score_list, bboxes_list = align_instance(frame_bgr)
-            if len(pts256_list) > 0:
-                pts256 = pts256_list[0]
+            landmark_list, score_list, bboxes_list = align_instance(frame_bgr)
+            if len(landmark_list) > 0:
+                landmark_2d_106 = landmark_list[0]
                 lmk3_ = np.zeros((3, 2))
-                lmk3_[0] = np.mean(pts256[[0, 1, 2, 3, 12, 13, 14, 15], 0:2], axis=0)
-                lmk3_[1] = np.mean(pts256[[16, 17, 18, 19, 28, 29, 30, 31], 0:2], axis=0)
-                lmk3_[2] = np.mean(pts256[[80, 81, 82, 83, 84, 91], 0:2], axis=0)
+                lmk3_[0] = np.mean(landmark_2d_106[[43, 48, 49, 51, 50]], axis=0)
+                lmk3_[1] = np.mean(landmark_2d_106[101:106], axis=0)
+                lmk3_[2] = np.mean(landmark_2d_106[[74, 77, 83, 86]], axis=0)
+                lmk3_ = np.round(lmk3_)
                 face, _ = restorer.align_warp_face(
                     frame_bgr.copy(), lmks3=lmk3_, smooth=False, border_mode='constant')
                 face = cv2.resize(face, (256, 256), interpolation=cv2.INTER_CUBIC)
@@ -134,10 +136,10 @@ def _compute_single_video(video_path, align_instance, restorer, lipsync,
 
 
 def _worker_fn(gpu_id, video_shard, path_cfg, output_dir, progress_counter):
-    """单 GPU Worker 进程"""
+    """Single-GPU worker process."""
     device = 'cuda:%d' % gpu_id
 
-    # 确保 metrics 目录在 sys.path 中 (子进程需要)
+    # Ensure the metrics directory is on sys.path (needed in the subprocess)
     metrics_dir = os.path.dirname(os.path.abspath(__file__))
     if metrics_dir not in sys.path:
         sys.path.insert(0, metrics_dir)
@@ -146,10 +148,7 @@ def _worker_fn(gpu_id, video_shard, path_cfg, output_dir, progress_counter):
 
     align_instance = AlignImage(
         device=device,
-        det_path=path_cfg['det_path'],
-        p1_path=path_cfg['p1_path'],
-        p2_path=path_cfg['p2_path'],
-        pts217_path=path_cfg['pts217_path'],
+        model_root=path_cfg.get('model_root', 'checkpoints/auxiliary'),
     )
     restorer = AlignRestore()
     lipsync = LipSync(device_id=gpu_id, config_path=path_cfg.get('config_path'))
@@ -183,14 +182,14 @@ def _worker_fn(gpu_id, video_shard, path_cfg, output_dir, progress_counter):
 
 def compute_syncnet(video_dir, bench_csv, device='cuda:0', num_gpus=8, path_cfg=None, **kwargs):
     """
-    计算 SyncNet 音画同步指标。
+    Compute the SyncNet audio-visual synchronization metric.
 
     Args:
-        video_dir: 编辑后视频目录 (包含 mp4 文件)
-        bench_csv: benchmark CSV 路径
-        device: 设备 (多GPU时作为基准设备)
-        num_gpus: 使用的 GPU 数量
-        path_cfg: syncnet 路径配置 dict (从 path.yml 加载)
+        video_dir: directory of edited videos (mp4 files)
+        bench_csv: benchmark CSV path
+        device: device (base device when using multiple GPUs)
+        num_gpus: number of GPUs to use
+        path_cfg: syncnet path config dict (loaded from path.yml)
 
     Returns:
         tuple: (overall_stats, per_task_stats, results_list)
@@ -205,11 +204,11 @@ def compute_syncnet(video_dir, bench_csv, device='cuda:0', num_gpus=8, path_cfg=
     total = len(videos)
     logger.info(f'SyncNet evaluation: {total} videos, {num_gpus} GPUs')
 
-    # 临时输出目录
+    # Temporary output directory
     output_dir = os.path.join(video_dir, '.syncnet_tmp')
     os.makedirs(output_dir, exist_ok=True)
 
-    # 分配 GPU
+    # Shard videos across GPUs
     shards = [[] for _ in range(num_gpus)]
     for i, v in enumerate(videos):
         shards[i % num_gpus].append(v)
@@ -226,7 +225,6 @@ def compute_syncnet(video_dir, bench_csv, device='cuda:0', num_gpus=8, path_cfg=
         p.start()
         processes.append(p)
 
-    # 进度条
     pbar = tqdm(total=total, desc='SyncNet', unit='video', dynamic_ncols=True)
     last_val = 0
     while any(p.is_alive() for p in processes):
@@ -242,7 +240,7 @@ def compute_syncnet(video_dir, bench_csv, device='cuda:0', num_gpus=8, path_cfg=
     for p in processes:
         p.join()
 
-    # 汇总结果
+    # Merge results
     results = []
     for gpu_id in range(num_gpus):
         gpu_output = os.path.join(output_dir, 'syncnet_gpu%d.jsonl' % gpu_id)
@@ -256,23 +254,23 @@ def compute_syncnet(video_dir, bench_csv, device='cuda:0', num_gpus=8, path_cfg=
                             pass
             os.remove(gpu_output)
 
-    # 清理临时目录
+    # Clean up the temporary directory
     try:
         os.rmdir(output_dir)
     except:
         pass
 
-    # 添加 task 信息
+    # Attach task labels
     task_map = build_task_map(bench_csv)
     assign_tasks(results, task_map)
 
-    # 统计
+    # Statistics
     overall_stats = compute_statistics(results, 'sync_conf',
                                        valid_fn=lambda x: x is not None)
     per_task_stats = compute_per_task_statistics(results, 'sync_conf',
                                                  valid_fn=lambda x: x is not None)
 
-    # 额外统计: pass rate (conf >= 0.2)
+    # Extra: pass rate (conf >= 0.2)
     valid_confs = [r['sync_conf'] for r in results if r['sync_conf'] is not None]
     if valid_confs:
         pass_count = sum(1 for c in valid_confs if c >= 0.2)
@@ -286,11 +284,11 @@ def compute_syncnet(video_dir, bench_csv, device='cuda:0', num_gpus=8, path_cfg=
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='SyncNet 音画同步评测')
-    parser.add_argument('--video_dir', required=True, help='编辑后视频目录')
-    parser.add_argument('--bench_csv', default=None, help='Benchmark CSV 路径')
+    parser = argparse.ArgumentParser(description='SyncNet audio-visual sync evaluation')
+    parser.add_argument('--video_dir', required=True, help='Directory of edited videos')
+    parser.add_argument('--bench_csv', default=None, help='Benchmark CSV path')
     parser.add_argument('--num_gpus', type=int, default=8)
-    parser.add_argument('--output', type=str, default=None, help='输出 JSON 路径')
+    parser.add_argument('--output', type=str, default=None, help='Output JSON path')
     return parser.parse_args()
 
 

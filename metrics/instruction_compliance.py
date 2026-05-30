@@ -1,13 +1,14 @@
 # coding=utf-8
 """
-instruction_compliance.py - 指令遵循度指标
-基于 Qwen3-Omni VLM 评估编辑结果是否符合指令要求 (1-5分)。
+instruction_compliance.py - Instruction compliance metric.
 
-用法 (单独使用):
+Uses the Qwen3-Omni VLM to judge whether the edit follows the instruction (1-5).
+
+Standalone usage:
     conda activate qwen3omni
-    python instruction_compliance.py --video_dir <视频目录>
+    python instruction_compliance.py --video_dir <video_dir>
 
-作为模块调用:
+As a module:
     from instruction_compliance import compute_instruction_compliance
 """
 import os
@@ -33,12 +34,12 @@ DEFAULT_QWEN_MODEL = str(
 
 def _build_entries(video_dir, bench_csv):
     """
-    构建评测条目列表。
-    需要匹配: 编辑后视频 -> benchmark CSV 中的源视频路径和 prompt。
+    Build the list of evaluation entries.
+    Matches each edited video to its source path and prompt from the benchmark CSV.
     """
     videos = collect_videos(video_dir)
 
-    # 从 CSV 构建 hash -> {src_path, prompt, task}
+    # Build hash -> {src_path, prompt, task} from the CSV
     hash_to_info = {}
     with open(bench_csv, 'r', encoding='utf-8') as f:
         for row in csv.DictReader(f):
@@ -73,14 +74,14 @@ def _build_entries(video_dir, bench_csv):
 def compute_instruction_compliance(video_dir, bench_csv, device='cuda:0', num_gpus=8,
                                     path_cfg=None, **kwargs):
     """
-    计算 Instruction Compliance 指令遵循度指标。
+    Compute the instruction compliance metric.
 
     Args:
-        video_dir: 编辑后视频目录
-        bench_csv: benchmark CSV 路径
-        device: 设备 (未使用)
-        num_gpus: GPU 数量
-        path_cfg: 配置 dict
+        video_dir: directory of edited videos
+        bench_csv: benchmark CSV path
+        device: device (unused)
+        num_gpus: number of GPUs
+        path_cfg: config dict
 
     Returns:
         tuple: (overall_stats, per_task_stats, results_list)
@@ -102,7 +103,7 @@ def compute_instruction_compliance(video_dir, bench_csv, device='cuda:0', num_gp
     llm, processor = load_model(model_path, tp_size, pp_size)
     results = run_instruction_eval(entries, llm, processor, batch_size=batch_size)
 
-    # 只保留 instruction_compliance 分数 (video_fidelity 由另一个脚本负责)
+    # Keep only the instruction_compliance score (video_fidelity is handled separately)
     for r in results:
         r.pop('video_fidelity', None)
 
@@ -118,9 +119,9 @@ def compute_instruction_compliance(video_dir, bench_csv, device='cuda:0', num_gp
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Instruction Compliance 指令遵循度评测 (Qwen3-Omni)')
-    parser.add_argument('--video_dir', required=True, help='编辑后视频目录')
-    parser.add_argument('--bench_csv', default=None, help='Benchmark CSV 路径')
+    parser = argparse.ArgumentParser(description='Instruction compliance evaluation (Qwen3-Omni)')
+    parser.add_argument('--video_dir', required=True, help='Directory of edited videos')
+    parser.add_argument('--bench_csv', default=None, help='Benchmark CSV path')
     parser.add_argument('--output', type=str, default=None)
     parser.add_argument('--batch_size', type=int, default=8)
     return parser.parse_args()

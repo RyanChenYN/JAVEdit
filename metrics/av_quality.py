@@ -1,13 +1,14 @@
 # coding=utf-8
 """
-av_quality.py - 音视频质量指标 (AV Quality)
-基于 Qwen3-Omni VLM 评估编辑后视频的整体音视频质量 (1-5分)。
+av_quality.py - Audio-visual quality metric.
 
-用法 (单独使用):
+Uses the Qwen3-Omni VLM to rate the overall AV quality of edited videos (1-5).
+
+Standalone usage:
     conda activate qwen3omni
-    python av_quality.py --video_dir <视频目录>
+    python av_quality.py --video_dir <video_dir>
 
-作为模块调用:
+As a module:
     from av_quality import compute_av_quality
 """
 import os
@@ -32,7 +33,7 @@ DEFAULT_QWEN_MODEL = str(
 
 
 def _build_entries(video_dir, bench_csv):
-    """构建评测条目列表"""
+    """Build the list of evaluation entries."""
     videos = collect_videos(video_dir)
     task_map = build_task_map(bench_csv)
 
@@ -51,14 +52,14 @@ def _build_entries(video_dir, bench_csv):
 
 def compute_av_quality(video_dir, bench_csv, device='cuda:0', num_gpus=8, path_cfg=None, **kwargs):
     """
-    计算 AV Quality 音视频质量指标。
+    Compute the AV quality metric.
 
     Args:
-        video_dir: 编辑后视频目录
-        bench_csv: benchmark CSV 路径
-        device: 设备 (未使用，模型由 vLLM 管理)
-        num_gpus: GPU 数量 (用于 tensor_parallel)
-        path_cfg: 配置 dict (from path.yml)
+        video_dir: directory of edited videos
+        bench_csv: benchmark CSV path
+        device: device (unused; the model is managed by vLLM)
+        num_gpus: number of GPUs (for tensor parallelism)
+        path_cfg: config dict (from path.yml)
 
     Returns:
         tuple: (overall_stats, per_task_stats, results_list)
@@ -80,7 +81,6 @@ def compute_av_quality(video_dir, bench_csv, device='cuda:0', num_gpus=8, path_c
     llm, processor = load_model(model_path, tp_size, pp_size)
     results = run_av_quality_eval(entries, llm, processor, batch_size=batch_size)
 
-    # 添加 task (已在 entries 中)
     overall_stats = compute_statistics(results, 'av_quality',
                                        valid_fn=lambda x: x is not None)
     per_task_stats = compute_per_task_statistics(results, 'av_quality',
@@ -93,10 +93,10 @@ def compute_av_quality(video_dir, bench_csv, device='cuda:0', num_gpus=8, path_c
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='AV Quality 音视频质量评测 (Qwen3-Omni)')
-    parser.add_argument('--video_dir', required=True, help='编辑后视频目录')
-    parser.add_argument('--bench_csv', default=None, help='Benchmark CSV 路径')
-    parser.add_argument('--output', type=str, default=None, help='输出 JSON 路径')
+    parser = argparse.ArgumentParser(description='AV quality evaluation (Qwen3-Omni)')
+    parser.add_argument('--video_dir', required=True, help='Directory of edited videos')
+    parser.add_argument('--bench_csv', default=None, help='Benchmark CSV path')
+    parser.add_argument('--output', type=str, default=None, help='Output JSON path')
     parser.add_argument('--batch_size', type=int, default=8)
     return parser.parse_args()
 
