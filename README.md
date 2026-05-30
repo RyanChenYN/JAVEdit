@@ -70,13 +70,6 @@
 
 This repository is the official implementation of **JAVEdit: Joint Audio-Visual Instruction-Guided Video Editing with Agentic Data Curation**. It collects the dataset, model, and benchmark resources for instruction-guided **joint audio-visual** video editing. If you find any work missing or have any suggestions, feel free to open a pull request or [contact us](#contact).
 
-**🔥 More up-to-date joint audio-visual editing resources and evaluation results will continue to be updated.**
-
-**📝 Update:**
-
-- **[2026-05-29]** The JAVEdit paper is currently **under review**. 🚀
-- **[2026-05-29]** Initial release of **JAVEdit-100k**, **JAVEditBench**, and the **JAVEdit** baseline. 🎉🎉🎉
-
 <a name="highlight"></a>
 
 # ✨ Highlight!!!
