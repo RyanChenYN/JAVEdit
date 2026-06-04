@@ -3,7 +3,6 @@
 <img width="765" alt="JAVEdit" src="assets/title.png">
      </a>
 </p>
-
 <p align="center">
     <a href="https://scholar.google.com.hk/citations?user=-WKfgd0AAAAJ&hl=zh-CN"><strong>Yinan Chen <sup>1★</sup></strong></a>
     ·
@@ -47,7 +46,7 @@
     <strong><sup>6</sup>National University of Singapore</strong>
 </p>
 <p align="center">
-    <a href='https://github.com/RyanChenYN/JAVEdit'>
+    <a href='https://arxiv.org/abs/2606.03168'>
       <img src='https://img.shields.io/badge/arXiv-PDF-red?style=flat&logo=arXiv&logoColor=red' alt='arXiv PDF'>
     </a>
     <a href="https://huggingface.co/datasets/Coraxor/JAVEdit-100k">
@@ -264,7 +263,7 @@ If you find **JAVEdit** useful for your research, please consider giving a star 
 @article{chen2026javedit,
   title={JAVEdit: Joint Audio-Visual Instruction-Guided Video Editing with Agentic Data Curation},
   author={Chen, Yinan and Lin, Chuming and Chen, Zhennan and Zeng, Yuxiang and Zhu, Junwei and Bi, Yali and Huang, Xijie and Xu, Chengming and Luo, Donghao and Xue, Zhucun and Hu, Xiaobin and Wang, Chengjie and Liu, Yong and Zhang, Jiangning and Yan, Shuicheng},
-  journal={arXiv preprint arXiv:XXXX.XXXXX},
+  journal={arXiv preprint arXiv:2606.03168},
   year={2026}
 }
 ```
