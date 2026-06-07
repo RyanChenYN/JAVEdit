@@ -171,6 +171,20 @@ The full training dataset and the JAVEditBench test set are hosted on Hugging Fa
 huggingface-cli download --repo-type dataset --resume-download Coraxor/JAVEdit-100k --local-dir $YOUR_LOCAL_PATH
 ```
 
+The benchmark metadata file [`benchmark_150.csv`](./benchmark_150.csv) (150 rows, 147 unique videos) is already shipped with this repository at the project root, so you do **not** need to download it from Hugging Face. If you only need the **JAVEditBench** source videos for evaluation (≈437 MiB), pull the tarball alone instead of the full dataset and extract it next to the CSV (i.e., into the repo root):
+
+```bash
+# From the repo root
+huggingface-cli download --repo-type dataset \
+    Coraxor/JAVEdit-100k benchmark_videos.tar.gz \
+    --local-dir .
+
+# Extract — produces ./benchmark_videos/ with 147 .mp4 files alongside benchmark_150.csv
+tar -xzf benchmark_videos.tar.gz
+```
+
+The CSV references each source video as a relative path `benchmark_videos/<name>.mp4`, so once the archive is extracted in the repo root the evaluation pipeline resolves paths automatically.
+
 <a name="usage"></a>
 
 # :muscle: Usage
@@ -210,7 +224,7 @@ cd metrics
 
 VLLM_WORKER_MULTIPROC_METHOD=spawn python evaluate.py \
     --video_dir /path/to/edited_videos \
-    --bench_csv /path/to/benchmark.csv \
+    --bench_csv ../benchmark_150.csv \
     --output_path /path/to/eval_results \
     --metric syncnet vtss utmos av_quality instruction_compliance video_fidelity \
     --num_gpus 8 \
@@ -222,7 +236,7 @@ Run only the lightweight (non-MLLM) metrics on a single GPU:
 ```bash
 python evaluate.py \
     --video_dir /path/to/edited_videos \
-    --bench_csv /path/to/benchmark.csv \
+    --bench_csv ../benchmark_150.csv \
     --metric utmos \
     --num_gpus 1 \
     --name javedit_utmos
